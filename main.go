@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"strings"
 
@@ -13,6 +14,10 @@ import (
 type Link struct {
 	Href string
 	Text string
+}
+
+func (l Link) String() string {
+	return fmt.Sprintf("{\n	"+"href:   %v\n"+"	text:   %v\n"+"}", l.Href, l.Text)
 }
 
 func walk(n *html.Node, links *[]Link) {
@@ -46,23 +51,65 @@ func extractText(n *html.Node, l *Link) {
 	}
 }
 
-func main() {
-	var links []Link
-	fname := flag.String("fname", "", "specify the name of the file to open")
-	flag.Parse()
-
+func readFile(fname *string) (*html.Node, error) {
 	f, err := os.Open(*fname)
 	if err != nil {
-		log.Fatal(err)
+		return nil, fmt.Errorf("unable to open a file: %q, no such filename", *fname)
 	}
 	defer f.Close()
 
-	doc, err := html.Parse(f)
+	return html.Parse(f)
+}
+
+func fetchPage(url *string) (*html.Node, error) {
+	resp, err := http.Get(*url)
+	if err != nil {
+		return nil, fmt.Errorf("could not fetch the web page: %v", err)
+	}
+	defer resp.Body.Close()
+
+	return html.Parse(resp.Body)
+}
+
+func main() {
+	var (
+		links []Link
+		html  *html.Node
+		err   error
+	)
+
+	fname := flag.String("fname", "", "specify the name of the file to open")
+	url := flag.String("url", "", "specify the page url to fetch")
+
+	flag.Parse()
+
+	if *fname != "" && *url != "" {
+		fmt.Println("Error: Cannot specify both -fname and -url flags")
+		flag.Usage()
+		os.Exit(1)
+	}
+
+	if *fname == "" && *url == "" {
+		fmt.Println("Error: Both -url and -fname flags cannot be emtpy")
+		flag.Usage()
+		os.Exit(1)
+	}
+
+	if *fname != "" {
+		html, err = readFile(fname)
+	} else {
+		html, err = fetchPage(url)
+	}
+
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	walk(doc, &links)
+	walk(html, &links)
 
-	fmt.Printf("Links after a walk %#v", links)
+	fmt.Printf("Links after a walk:\n\n")
+
+	for _, l := range links {
+		fmt.Printf("%s\n", l)
+	}
 }

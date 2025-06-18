@@ -109,7 +109,12 @@ func main() {
 
 	fmt.Printf("Links after a walk:\n\n")
 
-	for _, l := range links {
-		fmt.Printf("%s\n", l)
+	for i, l := range links {
+		switch i {
+		case len(links) - 1:
+			fmt.Printf("%s\n", l)
+		default:
+			fmt.Printf("%s,\n", l)
+		}
 	}
 }

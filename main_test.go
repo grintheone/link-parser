@@ -1,6 +1,7 @@
 package main
 
 import (
+	"os"
 	"testing"
 )
 
@@ -80,6 +81,12 @@ func TestWalk(t *testing.T) {
 	for _, tt := range table {
 		t.Run(tt.name, tt.run)
 	}
+}
+
+func TestRun(t *testing.T) {
+	os.Args = append(os.Args, "-fname=ex4.html")
+
+	run()
 }
 
 func assertSize(t testing.TB, got, want int) {

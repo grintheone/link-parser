@@ -17,7 +17,14 @@ type Link struct {
 }
 
 func (l Link) String() string {
-	return fmt.Sprintf("{\n	"+"href:   %v\n"+"	text:   %v\n"+"}", l.Href, l.Text)
+	var sb strings.Builder
+
+	fmt.Fprintln(&sb, "{")
+	fmt.Fprintf(&sb, "%7s : %v\n", "href", l.Href)
+	fmt.Fprintf(&sb, "%7s : %v\n", "text", l.Text)
+	fmt.Fprintf(&sb, "}")
+
+	return sb.String()
 }
 
 func walk(n *html.Node, links *[]Link) {
@@ -71,7 +78,7 @@ func fetchPage(url *string) (*html.Node, error) {
 	return html.Parse(resp.Body)
 }
 
-func main() {
+func run() error {
 	var (
 		links []Link
 		html  *html.Node
@@ -102,7 +109,7 @@ func main() {
 	}
 
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	walk(html, &links)
@@ -116,5 +123,13 @@ func main() {
 		default:
 			fmt.Printf("%s,\n", l)
 		}
+	}
+
+	return nil
+}
+
+func main() {
+	if err := run(); err != nil {
+		log.Fatal(err)
 	}
 }
